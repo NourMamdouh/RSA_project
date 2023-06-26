@@ -2,7 +2,7 @@ module rslt_ff #(parameter width=6) (input clk,
 input rst,
 input [width-1 : 0]rst_val,
 input [width-1 :0] data_in,
-input done,
+input w_en /*active low*/,
 output reg [width-1 : 0] data_out);
 
 always @(posedge clk) begin
@@ -10,7 +10,7 @@ always @(posedge clk) begin
 		data_out <= rst_val;
 	end
 	else begin
-		if(done)begin
+		if(w_en)begin
 			data_out <= data_out;
 		end
 		else begin

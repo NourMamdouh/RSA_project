@@ -10,22 +10,28 @@ output valid);
 parameter mult_width = base_width + N_width ;
 wire [mult_width-1 : 0] mult_out_top;
 wire [N_width-1 : 0] mod_out;
-wire done;
 wire [expo_width-1 : 0] top_cntr_out;
-reg [N_width-1 : 0] rslt_in;
-wire [N_width-1 : 0] rslt_out;
+reg [N_width-1 : 0] ff_rslt_in;
+wire [N_width-1 : 0] ff_rslt_out;
 reg [N_width-1 : 0] mult_in1;
 wire [expo_width-1 : 0] Res_rst_val;
+
+wire done;
+wire start_reg;
+wire strt;
+
+assign strt = start | start_reg; // to make sure (done) turns to 0, at the very first edge that comes after pushing start by resetting the counter 
+
 
 
 
 //////////////////////////////////////////////////////
 
 	 counter #(.cntr_width(expo_width)) top_cntr (
-    .rst(start), 
+    .rst(strt), 
     .clk(clk), 
     .end_val(expo), 
-    .done(done), 
+    .done(done), // once done signal is on, result is ready to be accounted for
     .cntr_out(top_cntr_out)
     );	
  
@@ -39,7 +45,7 @@ wire [expo_width-1 : 0] Res_rst_val;
     );
 	 
 	always @(*)begin
-		if(start)begin
+		if(strt)begin
 			mult_in1 = 1;
 		end
 		else begin
@@ -59,13 +65,13 @@ wire [expo_width-1 : 0] Res_rst_val;
 	 	 
 	 rslt_ff #(.width(N_width)) rslt (
     .clk(clk), 
-    .rst(start),
+    .rst(strt),
 	 .rst_val(Res_rst_val), 
-    .data_in(rslt_in),
-	 .done(done),
-    .data_out(rslt_out)
+    .data_in(ff_rslt_in),
+	.w_en(done), // write enable is active low, so once done turns to 1, result ff keeps its final result
+    .data_out(ff_rslt_out)
     ); 
-always @(*) begin rslt_in = mod_out; end
+always @(*) begin ff_rslt_in = mod_out; end
 
  //when expo=0, counter is no longer our guide
  // if expo=0 and N=1, then result= 1%1 = 0 --> Res_rst_val=0
@@ -73,9 +79,19 @@ always @(*) begin rslt_in = mod_out; end
  // ic case of any other values but the two previously discussed case, the correct value to start with is always 1 --> Res_rst_val=1
 assign Res_rst_val = (expo == 0 && N==1) ? 0:1;  
 	 
-////////////////////////////////////	 	 
+////////////////////////////////////
+
+// this register is used so that the whole computing operation only starts at the very first edge after start signal go back to 0
+// as long as start is 1, system is under resetting. 
+//the transistion of the input start signal from 1 to 0 is what starts the opertaion.
+reg_d st (
+    .clk(clk), 
+    .data(start), 
+    .reg_data(start_reg)
+    );	
+/////////////////////////////////////	 	 
 		
-assign result = done==1? rslt_out : 0;  //output port (result) value is always zero unless the correct result value is ready
+assign result = done==1? ff_rslt_out : 0;  //output port (result) value is always zero unless the correct final result value is ready
 assign valid = done;
 
 
