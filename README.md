@@ -14,3 +14,4 @@ exponentiation, and modulo (remainder) operation.
 
 The focus of this project is to utilize as few SLICEs/CLBs as possible of the FPGA board. This is done by making good usage of 
 other FPGA resources such as DSP slices and BRAM.
+****** this version of the design is to work with synchronous reset *********
