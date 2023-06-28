@@ -10,7 +10,7 @@ output valid);
 
 
 parameter mult_width = base_width + N_width ;
-parameter counter_width = expo_width;
+parameter counter_width = expo_width+1;
 
 wire [mult_width-1 : 0] mult_out_top;
 wire [N_width-1 : 0] mod_out;
@@ -57,8 +57,7 @@ wire done;
 	 
 	always @(*)begin
 		if(top_cntr_out==0)begin
-			mult_in1 = base; // since minimum N allowed to access ram is 2, base^2 should the first step
-		end
+			mult_in1 = 1; 
 		else begin
 			mult_in1 = mod_out;
 		end
@@ -110,7 +109,7 @@ always @(*) begin
 		end
 		else begin //normal cases
 			Res_rst_val = 0; //could be any value
-			end_cnt_val = expo;
+			end_cnt_val = expo+1;
 		end
 	end
 end 
