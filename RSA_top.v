@@ -10,16 +10,17 @@ output valid);
 
 
 parameter mult_width = base_width + N_width ;
-parameter counter_width = expo_width+1;
+parameter counter_width = expo_width;
 
 wire [mult_width-1 : 0] mult_out_top;
 wire [N_width-1 : 0] mod_out;
 wire [expo_width-1 : 0] top_cntr_out;
-reg [N_width-1 : 0] ff_rslt_in;
+wire [N_width-1 : 0] ff_rslt_in;
 wire [N_width-1 : 0] ff_rslt_out;
 reg [N_width-1 : 0] mult_in1;
-wire [expo_width-1 : 0] Res_rst_val;
+reg [expo_width-1 : 0] Res_rst_val;
 reg [counter_width-1:0] end_cnt_val;
+reg [N_width-1 : 0] N_top;
 
 wire done;
 
@@ -45,14 +46,6 @@ wire done;
     );	
 
 	
-	always @(*) begin
-		if(expo==0)begin
-			end_cnt_val = expo; //no need to operate, counter rst value is the final result
-		end
-		else begin
-			end_cnt_val = expo+1;
-		end
-	end
 		
 ///////////////////////////////////////////////	 
 	 	 
@@ -64,7 +57,7 @@ wire done;
 	 
 	always @(*)begin
 		if(top_cntr_out==0)begin
-			mult_in1 = 1;
+			mult_in1 = base; // since minimum N allowed to access ram is 2, base^2 should the first step
 		end
 		else begin
 			mult_in1 = mod_out;
@@ -79,6 +72,15 @@ wire done;
     .out(mod_out)
     );
 	
+always @(*) begin
+	if(N > 1)begin 
+		N_top = N;
+	end
+	else begin // special cases, N_top could be any value but 0 or 1 --> 2 is chosen
+		N_top = 2; 
+	end
+end
+	
 //////////////////////////////////////	
 	 	 
 	 rslt_ff #(.width(N_width)) rslt (
@@ -90,16 +92,29 @@ wire done;
     .data_out(ff_rslt_out)
     );
 	 
-always @(*) begin ff_rslt_in = mod_out; end
+assign  ff_rslt_in = mod_out; 
 
- //when expo=0, counter is no longer our guide
- // if expo=0 and N=1, then result= 1%1 = 0 --> Res_rst_val=0
- // if expo =0 and N equals anything but zero, then result = 1 --> Res_rst_val=1
- // ic case of any other values but the two previously discussed case, the correct value to start with is always 1 --> Res_rst_val=1
-assign Res_rst_val = (expo == 0 && N==1) ? 0:1;
-	 
 
-///////////////////////////////////// 	 
+/////////////////////////////////////
+
+// dealing with special cases (exceptions)
+always @(*) begin
+	if(N==0 || N==1) begin
+		Res_rst_val = 0;
+		end_cnt_val = 0; // result is already ready, no need to count
+	end
+	else begin
+		if(expo==0)begin
+			Res_rst_val = 1;
+			end_cnt_val = 0; // result is already ready, no need to count
+		end
+		else begin //normal cases
+			Res_rst_val = 0; //could be any value
+			end_cnt_val = expo;
+		end
+	end
+end 
+/////////////////////////////////////	 	 
 		
 assign result = done==1? ff_rslt_out : 0; //output port (result) value is always zero unless the correct final result value is ready
 assign valid = done;
