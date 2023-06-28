@@ -1,5 +1,7 @@
-module RSA_top #(parameter base_width=6, parameter expo_width=6, parameter N_width= 6) (input [expo_width-1 : 0] expo,
-input clk, 
+module RSA_top #(parameter base_width=4, parameter expo_width=4, parameter N_width= 4) (input [expo_width-1 : 0] expo,
+input clk_n,
+input clk_p,
+input RESET,
 input start,
 input [base_width-1 : 0] base,
 input [N_width-1 : 0] N,
@@ -36,7 +38,7 @@ wire done;
 
 	 counter #(.cntr_width(counter_width)) top_cntr (
     .rst(start), 
-    .clk(clk), 
+    .clk(CLK_OUT1), 
     .end_val(end_cnt_val), 
     .done(done), // once done signal is on, result is ready to be accounted for
     .cntr_out(top_cntr_out)
@@ -71,7 +73,7 @@ wire done;
 
 ////////////////////////////////////	 
 	bram #(.num_width(mult_width),.N_width(N_width)) mod (
-    .clk(clk), 
+    .clk(CLK_OUT1), 
     .N(N), 
     .num(mult_out_top), 
     .out(mod_out)
@@ -80,7 +82,7 @@ wire done;
 //////////////////////////////////////	
 	 	 
 	 rslt_ff #(.width(N_width)) rslt (
-    .clk(clk), 
+    .clk(CLK_OUT1), 
     .rst(start),
 	 .rst_val(Res_rst_val), 
     .data_in(ff_rslt_in),
