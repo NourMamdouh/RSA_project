@@ -4,19 +4,18 @@ input [num_width-1:0] num,
 output reg [N_width-1:0] out);
 reg [N_width-1:0] bram [0:2**(N_width+num_width)- 2**(num_width+1) - 1];
 integer i,k;
-
 //starting from N=2,so as not to waste ram resources 
 initial begin
-	for(i=2;i<2**N_width; i=i+1) begin
-		for(k=0;k<2**num_width; k=k+1) begin
-			bram[(2**num_width)*(i-2) + k] = k%i;
+	for(i=0;i<2**num_width; i=i+1) begin
+		for(k=2;k<2**N_width ; k=k+1) begin
+			bram[(2**N_width-2)*(i) + k-2] = i%k;
 		end
 	end
 end
 
 
 always @(posedge clk)begin
-	out <= bram[(2**num_width)*(N-2) + num];
+	out <= bram[(2**N_width-2)*(num) + N-2];
 end
 
 endmodule
